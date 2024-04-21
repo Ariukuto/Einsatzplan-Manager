@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:io';
-import 'package:path/path.dart';
 import 'package:open_filex/open_filex.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -31,7 +29,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: lightTheme,
-      home: const MyHomePage(title: 'Einsatzpläne'),
+      home: const MyHomePage(title: 'Einsatzplan Manager'),
     );
   }
 }
@@ -80,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
 			builder: (context, snapshotFile) {
 				if(!snapshotFile.hasData) {
 					return const Center(
-						child: Text("Keine Pläne hochgeladen"),
+						child: Text("Keine Einsatzpläne gefunden"),
 					);
 				} else {
 					return FutureBuilder(
