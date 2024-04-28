@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 
 
+
 void main() {
   runApp(MyApp());
 }
@@ -29,7 +30,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: lightTheme,
-      home: const MyHomePage(title: 'Einsatzplan Manager'),
+      home: const MyHomePage(title: 'FFW Marktbreit'),
+			onGenerateRoute: (settings) {
+				
+			},
     );
   }
 }
@@ -55,13 +59,25 @@ class _MyHomePageState extends State<MyHomePage> {
 					final directory = snapshot.data!;
 					return Scaffold(
 						appBar: AppBar(
-							title: Text(widget.title),
+							title: Text(widget.title, style: const TextStyle(color: Colors.white)),
+							backgroundColor: Colors.redAccent,
+							actions: [
+								IconButton(
+									icon: const Icon(Icons.settings, size: 30, color: Colors.white),
+									onPressed: () => Navigator. .push(
+										context,
+										MaterialPageRoute(
+											builder: (context) => const Placeholder(),
+										),
+									),
+								)
+							],
 						),
 						body: buildBody(directory),
 						floatingActionButton: FloatingActionButton(
 							onPressed: () => _add(directory),
 							tooltip: 'Add',
-							backgroundColor: Theme.of(context).primaryColor,
+							backgroundColor: Colors.redAccent,
 							child: Icon(Icons.add, color: Theme.of(context).iconTheme.color)
 						),
 					);	
@@ -73,46 +89,32 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 	buildBody(Directory directory) {
-		return StreamBuilder(
-			stream: directory.list(),
-			builder: (context, snapshotFile) {
-				if(!snapshotFile.hasData) {
-					return const Center(
-						child: Text("Keine Einsatzpläne gefunden"),
-					);
-				} else {
-					return FutureBuilder(
-						future: directory.list().length,
-						builder: (context, snapshotLength) {
-							if(!snapshotLength.hasData) {
-							  return const SizedBox.shrink();
-							}
-							return  ListView.builder(
-								itemCount: snapshotLength.data,
-								itemBuilder: (context, _) {
-									return ListTile(
-											title: Text(snapshotFile.data!.path.split('/').last),
-											// title: Text(snapshotFile.data!.path),
-											onTap: () {
-												OpenFilex.open(snapshotFile.data!.path);
-											},
-											trailing: GestureDetector(
-												child: Icon(Icons.delete_forever, color: Theme.of(context).errorColor),
-												onTap: () async {
-													await File(snapshotFile.data!.path).delete().then((value) => setState(() {}));
-												},
-											),
-										);	
-								}
-							);
-						}
-					);
-				}
-			}
+		var fileList = directory.listSync().where((v) => FileSystemEntity.isFileSync(v.path)).toList();
+		return ListView.separated(
+			itemCount: fileList.length,
+			separatorBuilder: (_, __) => const Divider(), 
+			itemBuilder: (context, i) => ListItem(i, fileList) 
 		);
 	}
 
-	void _add(Directory directory) async 
+	ListTile ListItem(int index, List<FileSystemEntity> fileList) {
+		var file = fileList[index];
+		var path = file.path;
+		var fileName = File(path).uri.pathSegments.last;
+		var lastModified = (file as File).lastModifiedSync();
+		var subtitle = "${lastModified.day}.${lastModified.month}.${lastModified.year}";
+		return ListTile(
+			title: Text(fileName),
+			subtitle: Text("Hinzugefügt: $subtitle "),
+			onTap: () => OpenFilex.open(path),
+			trailing: GestureDetector(
+			child: Icon(Icons.delete_forever, color: Theme.of(context).errorColor),
+			onTap: () async => File(path).delete().then((value) => setState(() {})),
+			),
+		);
+	}
+
+	void _add(Directory directory) async
 	{
 		FilePickerResult? result = await FilePicker.platform.pickFiles(
 			type: FileType.custom,
@@ -129,8 +131,10 @@ class _MyHomePageState extends State<MyHomePage> {
 			size: result.files.first.size
 		);
 
-		final file =  await File(pickedFile.path!).copy('${directory?.path}/${pickedFile.name}');
+		await File(pickedFile.path!).copy('${directory.path}/${pickedFile.name}');
 
 		setState(() {});
 	}
 }
+
+
